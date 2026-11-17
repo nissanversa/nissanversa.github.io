@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Uso do Carro — Green Park</title>
+<meta name="theme-color" content="#2f7d4f">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Uso do Carro">
+<style>
+  :root{
+    --bg:#f4f6f3; --card:#ffffff; --ink:#1c2420; --muted:#66716b; --line:#dfe5e1;
+    --green:#2f7d4f; --green-d:#23613d; --green-l:#e6f2ea;
+    --amber:#b7791f; --amber-l:#fdf3e1; --red:#b8402f; --red-l:#fbe9e6;
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:15px}
+  .wrap{max-width:760px;margin:0 auto;padding:calc(18px + env(safe-area-inset-top)) 14px calc(60px + env(safe-area-inset-bottom))}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .logo{width:42px;height:42px;border-radius:12px;background:var(--green);display:grid;place-items:center;flex:none}
+  h1{font-size:20px;margin:0;line-height:1.2}
+  .sub{color:var(--muted);font-size:13px}
+  .status{border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;display:flex;gap:12px;align-items:center;border:1px solid var(--line);background:var(--card)}
+  .status .dot{width:12px;height:12px;border-radius:50%;flex:none}
+  .status.free .dot{background:var(--green)}
+  .status.busy{background:var(--amber-l);border-color:#f0d9ad}
+  .status.busy .dot{background:var(--amber)}
+  .status b{display:block;font-size:15px}
+  .status span{color:var(--muted);font-size:13px}
+  .tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:#e7ece9;padding:5px;border-radius:12px;margin-bottom:14px}
+  .tabs button{border:0;background:transparent;padding:10px 6px;border-radius:9px;font:600 14px system-ui,sans-serif;color:var(--muted);cursor:pointer}
+  .tabs button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+  .card h2{font-size:16px;margin:0 0 4px}
+  .card .hint{color:var(--muted);font-size:13px;margin:0 0 14px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .full{grid-column:1/-1}
+  label{display:block;font-size:13px;font-weight:600;margin-bottom:5px}
+  label .req{color:var(--red)}
+  input,select,textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;font:15px system-ui,sans-serif;background:#fff;color:var(--ink)}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--green-l);border-color:var(--green)}
+  textarea{min-height:64px;resize:vertical}
+  .seg{display:flex;gap:8px}
+  .seg button{flex:1;padding:11px;border:1px solid var(--line);border-radius:10px;background:#fff;font:600 14px system-ui,sans-serif;cursor:pointer;color:var(--ink)}
+  .seg button.on.yes{background:var(--green-l);border-color:var(--green);color:var(--green-d)}
+  .seg button.on.no{background:var(--amber-l);border-color:var(--amber);color:#8a5a12}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:11px;padding:13px 18px;font:600 15px system-ui,sans-serif;cursor:pointer}
+  .btn.primary{background:var(--green);color:#fff;width:100%;margin-top:16px}
+  .btn.primary:hover{background:var(--green-d)}
+  .btn.primary:disabled{opacity:.5;cursor:not-allowed}
+  .btn.ghost{background:#eef2ef;color:var(--ink);padding:9px 14px;font-size:13px}
+  .msg{margin-top:12px;padding:11px 13px;border-radius:10px;font-size:14px;display:none}
+  .msg.ok{display:block;background:var(--green-l);color:var(--green-d)}
+  .msg.err{display:block;background:var(--red-l);color:var(--red)}
+  .msg.warn{display:block;background:var(--amber-l);color:#8a5a12}
+  .hidden{display:none!important}
+  .open-trip{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px;cursor:pointer;background:#fff}
+  .open-trip.sel{border-color:var(--green);background:var(--green-l)}
+  .open-trip b{font-size:15px}
+  .open-trip div{font-size:13px;color:var(--muted);margin-top:3px}
+  .kmcalc{margin-top:10px;font-size:14px;color:var(--muted)}
+  .kmcalc b{color:var(--ink)}
+  .filters{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+  .totals{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+  .tot{background:#f6f8f7;border-radius:10px;padding:10px 12px}
+  .tot b{display:block;font-size:19px}
+  .tot span{font-size:12px;color:var(--muted)}
+  .rec{border-top:1px solid var(--line);padding:12px 0}
+  .rec:first-child{border-top:0}
+  .rec .top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+  .rec .name{font-weight:600}
+  .rec .meta{font-size:13px;color:var(--muted);margin-top:3px;line-height:1.5}
+  .pill{display:inline-block;font-size:12px;font-weight:600;padding:3px 9px;border-radius:99px;white-space:nowrap}
+  .pill.g{background:var(--green-l);color:var(--green-d)}
+  .pill.a{background:var(--amber-l);color:#8a5a12}
+  .toolbar{display:flex;gap:8px;justify-content:flex-end;margin-bottom:12px;flex-wrap:wrap}
+  .empty{color:var(--muted);text-align:center;padding:26px 8px;font-size:14px}
+  .loading{color:var(--muted);font-size:14px;padding:6px 0}
+  @media (max-width:520px){.grid{grid-template-columns:1fr}.filters{grid-template-columns:1fr}}
+  .lock{background:#eef2ef;color:var(--muted);pointer-events:none}
+  .conn{border-radius:12px;padding:11px 14px;margin-bottom:12px;font-size:14px;font-weight:500}
+  .conn.off{background:#eceff1;color:#37474f;border:1px solid #cfd8dc}
+  .conn.wait{background:var(--amber-l);color:#8a5a12}
+  .falhas{background:var(--red-l);color:var(--red);border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:14px}
+  .falhas .sub2{font-size:13px;margin:2px 0 8px}
+  .falha{display:flex;gap:10px;justify-content:space-between;align-items:center;border-top:1px solid #f1c9c2;padding:8px 0}
+  .falha span{font-size:12px}
+  i{color:var(--amber)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo" aria-hidden="true">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14v-5l-2-5H7l-2 5v5z"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/><path d="M5 12h14"/></svg>
+    </div>
+    <div>
+      <h1>Uso do Carro</h1>
+      <div class="sub">Green Park · registro de saída e chegada</div>
+    </div>
+  </header>
+
+  <div id="status" class="status free"><div class="dot"></div><div><b>Carregando…</b><span>Abrindo…</span></div></div>
+
+  <div id="conn" class="conn hidden"></div>
+  <div id="falhas" class="falhas hidden"></div>
+
+  <div class="tabs" role="tablist">
+    <button data-tab="saida" class="on">Saída</button>
+    <button data-tab="chegada">Chegada</button>
+    <button data-tab="historico">Histórico</button>
+  </div>
+
+  <section id="tab-saida" class="card">
+    <h2>Registrar saída</h2>
+    <p class="hint">Preencha antes de sair com o carro.</p>
+    <form id="formSaida" autocomplete="off">
+      <div class="grid">
+        <div class="full">
+          <label>Nome <span class="req">*</span></label>
+          <input id="s_nome" list="nomes" required placeholder="Quem está usando o carro">
+          <datalist id="nomes"></datalist>
+        </div>
+        <div><label>Data <span class="req">*</span></label><input id="s_data" type="text" readonly class="lock" tabindex="-1"></div>
+        <div><label>Hora da saída <span class="req">*</span></label><input id="s_hora" type="time" required></div>
+        <div class="full">
+          <label>Destino <span class="req">*</span></label>
+          <input id="s_destino" list="destinos" required placeholder="Ex.: Obra Diadema, cartório, banco…">
+          <datalist id="destinos"></datalist>
+        </div>
+        <div class="full">
+          <label>Finalidade da utilização <span class="req">*</span></label>
+          <select id="s_finalidade" required>
+            <option value="">Selecione…</option>
+            <option>Visita à obra</option>
+            <option>Banco / cartório</option>
+            <option>Entrega ou retirada de documentos</option>
+            <option>Compra de material</option>
+            <option>Fornecedor / empreiteiro</option>
+            <option>Reunião externa</option>
+            <option>Manutenção do carro / abastecimento</option>
+            <option>Outro</option>
+          </select>
+        </div>
+        <div class="full hidden" id="s_outroBox">
+          <label>Descreva a utilização <span class="req">*</span></label>
+          <input id="s_outro" placeholder="Qual é a finalidade?">
+        </div>
+        <div class="full">
+          <label>KM inicial (painel na saída) <span class="req">*</span></label>
+          <input id="s_km" type="number" inputmode="numeric" min="0" step="1" required placeholder="Ex.: 45230">
+          <div class="kmcalc" id="s_kmHint"></div>
+        </div>
+        <div class="full">
+          <label>Combustível na saída — tanque completo? <span class="req">*</span></label>
+          <div class="seg" data-seg="s_comb">
+            <button type="button" class="yes" data-v="Completo">Sim, completo</button>
+            <button type="button" class="no" data-v="Não completo">Não</button>
+          </div>
+        </div>
+        <div class="full hidden" id="s_nivelBox">
+          <label>Nível do combustível</label>
+          <select id="s_nivel"><option>3/4</option><option>1/2</option><option>1/4</option><option>Reserva</option></select>
+        </div>
+        <div class="full"><label>Observações</label><textarea id="s_obs" placeholder="Opcional"></textarea></div>
+      </div>
+      <button class="btn primary" type="submit" id="s_btn">Registrar saída</button>
+      <div class="msg" id="s_msg"></div>
+    </form>
+  </section>
+
+  <section id="tab-chegada" class="card hidden">
+    <h2>Registrar chegada</h2>
+    <p class="hint">Escolha a saída em aberto e informe o KM final.</p>
+    <div id="openList"></div>
+    <form id="formChegada" class="hidden" autocomplete="off">
+      <div class="grid">
+        <div><label>Data da chegada <span class="req">*</span></label><input id="c_data" type="text" readonly class="lock" tabindex="-1"></div>
+        <div><label>Hora da chegada <span class="req">*</span></label><input id="c_hora" type="time" required></div>
+        <div class="full">
+          <label>KM final (painel na chegada) <span class="req">*</span></label>
+          <input id="c_km" type="number" inputmode="numeric" min="0" step="1" required>
+          <div class="kmcalc" id="c_kmCalc"></div>
+        </div>
+        <div class="full">
+          <label>Combustível na chegada — tanque completo? <span class="req">*</span></label>
+          <div class="seg" data-seg="c_comb">
+            <button type="button" class="yes" data-v="Completo">Sim, completo</button>
+            <button type="button" class="no" data-v="Não completo">Não</button>
+          </div>
+        </div>
+        <div class="full hidden" id="c_nivelBox">
+          <label>Nível do combustível</label>
+          <select id="c_nivel"><option>3/4</option><option>1/2</option><option>1/4</option><option>Reserva</option></select>
+        </div>
+        <div class="full"><label>Observações</label><textarea id="c_obs" placeholder="Ex.: abasteci, barulho no freio, multa…"></textarea></div>
+      </div>
+      <button class="btn primary" type="submit" id="c_btn">Registrar chegada</button>
+    </form>
+    <div class="msg" id="c_msg"></div>
+  </section>
+
+  <section id="tab-historico" class="card hidden">
+    <h2>Histórico de uso</h2>
+    <p class="hint">Todos os registros, do mais recente para o mais antigo.</p>
+    <div class="filters">
+      <div><label>Mês</label><input id="f_mes" type="month"></div>
+      <div><label>Nome</label><input id="f_nome" placeholder="Filtrar por nome"></div>
+    </div>
+    <div class="totals">
+      <div class="tot"><b id="t_viagens">0</b><span>utilizações</span></div>
+      <div class="tot"><b id="t_km">0</b><span>km rodados</span></div>
+      <div class="tot"><b id="t_aberto">0</b><span>em aberto</span></div>
+    </div>
+    <div class="toolbar"><button class="btn ghost" id="btnAtualizar" type="button">Atualizar</button></div>
+    <div id="lista"><div class="loading">Carregando…</div></div>
+  </section>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
