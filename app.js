@@ -96,7 +96,7 @@
   const tabs = document.querySelectorAll(".tabs button");
   function goTab(name){
     tabs.forEach(b=>b.classList.toggle("on", b.dataset.tab===name));
-    ["saida","chegada","historico","seguro"].forEach(t=>$("tab-"+t).classList.toggle("hidden", t!==name));
+    ["saida","chegada","historico","seguro","gestao"].forEach(t=>$("tab-"+t).classList.toggle("hidden", t!==name));
   }
   tabs.forEach(b=>b.addEventListener("click",()=>{ goTab(b.dataset.tab); sincronizar(); }));
 
@@ -205,7 +205,7 @@
   $("f_nome").addEventListener("input",renderLista);
   $("btnAtualizar").addEventListener("click",()=>sincronizar());
 
-  function renderAll(){ renderConexao(); renderStatus(); renderSaidaHints(); renderAbertos(); renderLista(); }
+  function renderAll(){ renderAvisoManut(); renderConexao(); renderStatus(); renderSaidaHints(); renderAbertos(); renderLista(); }
 
   // ---------- comunicação com a planilha ----------
   function resumo(it){
@@ -242,7 +242,7 @@
     try{
       const r = await fetch(API+"?api=listar&t="+Date.now());
       const j = await r.json();
-      if(j && j.ok){ servidor=j.registros||[]; ultimaSync=Date.now(); gravar(K_CACHE,{registros:servidor, quando:ultimaSync}); online=true; loaded=true; }
+      if(j && j.ok){ servidor=j.registros||[]; ultimaSync=Date.now(); gravar(K_CACHE,{registros:servidor, quando:ultimaSync, aviso:j.aviso||""}); online=true; loaded=true; }
     }catch(e){ online=false; }
   }
   async function sincronizar(){
@@ -313,6 +313,132 @@
     showMsg(m,"ok", semNet ? "Chegada guardada no celular ("+fmtKm(rod)+" km). "+AVISO_ENVIO : "Chegada registrada: "+fmtKm(rod)+" km rodados. Obrigado!");
     botaoZap(m, zC);
   });
+
+
+  // ---------- ÁREA RESTRITA (somente administração) ----------
+  const K_ADM_TOKEN="usoCarroAdmToken", K_ADM_CACHE="usoCarroAdmCache";
+  let admModo="entrar", admDados=null, admExcluir=null;
+  const isoParaBr = s => { if(!s) return ""; const [y,m,d]=s.split("-"); return d+"/"+m+"/"+y; };
+  const brParaIso = s => { const m=String(s||"").match(/^(\d{2})\/(\d{2})\/(\d{4})$/); return m? m[3]+"-"+m[2]+"-"+m[1] : ""; };
+  const reais = n => (n==null||n==="")?"":Number(n).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+  async function admApi(corpo){
+    const r = await fetch(API, { method:"POST", body: JSON.stringify(corpo), headers:{ "Content-Type":"text/plain;charset=utf-8" } });
+    const j = await r.json();
+    if(!j.ok && j.erro==="SESSAO"){ gravar(K_ADM_TOKEN,""); admDados=null; throw new Error("Sessão expirada. Entre de novo."); }
+    if(!j.ok) throw new Error(j.erro||"Erro desconhecido");
+    return j;
+  }
+  function admMostrar(qual){ $("adm_login").classList.toggle("hidden", qual!=="login"); $("adm_area").classList.toggle("hidden", qual!=="area"); }
+  async function abrirAdm(){
+    goTab("gestao");
+    const tk=ler(K_ADM_TOKEN,"");
+    if(tk){ admMostrar("area"); admDados=ler(K_ADM_CACHE,null); renderAdm(); carregarAdm(); return; }
+    admMostrar("login"); $("adm_msg").className="msg";
+    try{
+      const j=await admApi({acao:"admStatus"});
+      admModo = j.configurado ? "entrar" : "criar";
+    }catch(e){ showMsg($("adm_msg"),"err","Sem internet. Para entrar na área restrita é preciso estar conectado."); }
+    $("adm_criarBox").classList.toggle("hidden", admModo!=="criar");
+    $("adm_senha2Box").classList.toggle("hidden", admModo!=="criar");
+    $("adm_btnEntrar").textContent = admModo==="criar" ? "Criar senha e entrar" : "Entrar";
+    $("adm_senha").focus();
+  }
+  $("btnAdm").addEventListener("click", abrirAdm);
+  $("adm_btnEntrar").addEventListener("click", async ()=>{
+    const s=$("adm_senha").value, m=$("adm_msg");
+    if(admModo==="criar"){
+      if(s.length<6){ showMsg(m,"err","A senha precisa ter pelo menos 6 caracteres."); return; }
+      if(s!==$("adm_senha2").value){ showMsg(m,"err","As senhas não são iguais."); return; }
+    }
+    if(!s){ showMsg(m,"err","Digite a senha."); return; }
+    $("adm_btnEntrar").disabled=true;
+    try{
+      const j=await admApi({acao: admModo==="criar"?"admCriar":"admEntrar", senha:s});
+      gravar(K_ADM_TOKEN,j.token); $("adm_senha").value=""; $("adm_senha2").value="";
+      admMostrar("area"); renderAdm(); await carregarAdm();
+    }catch(e){ showMsg(m,"err", /Failed to fetch|NetworkError|Load failed/i.test(e.message)?"Sem internet. Tente de novo quando estiver conectado.":e.message); }
+    finally{ $("adm_btnEntrar").disabled=false; }
+  });
+  async function carregarAdm(){
+    try{
+      const j=await admApi({acao:"admDados", token:ler(K_ADM_TOKEN,"")});
+      admDados=j; gravar(K_ADM_CACHE, Object.assign({quando:Date.now()}, j)); $("adm_off").classList.add("hidden");
+    }catch(e){
+      if(!ler(K_ADM_TOKEN,"")){ gravar(K_ADM_CACHE,null); admDados=null; abrirAdm(); return; }
+      const off=$("adm_off"); off.classList.remove("hidden");
+      off.textContent = "Sem conexão com a planilha"+(admDados&&admDados.quando?" — mostrando dados de "+horaTxt(admDados.quando):"")+". Para salvar, conecte à internet.";
+    }
+    renderAdm();
+  }
+  function textoAlerta(a){
+    const partes=[];
+    if(a.faltaKm!=null) partes.push(a.faltaKm<=0 ? "passou "+fmtKm(-a.faltaKm)+" km da troca" : "faltam "+fmtKm(a.faltaKm)+" km (troca aos "+fmtKm(a.proxKm)+")");
+    if(a.dias!=null) partes.push(a.dias<0 ? "venceu há "+(-a.dias)+" dia(s) ("+a.proxData+")" : a.dias===0 ? "vence hoje ("+a.proxData+")" : "faltam "+a.dias+" dia(s) ("+a.proxData+")");
+    return partes.join(" · ");
+  }
+  function renderAdm(){
+    const d=admDados;
+    const k = d && d.kmAtual!=null ? d.kmAtual : lastKm();
+    $("adm_km").textContent = k!=null ? fmtKm(k)+" km" : "—";
+    const al = (d&&d.alertas)||[];
+    const ord={vencido:0,proximo:1,ok:2};
+    $("adm_alertas").innerHTML = al.length ? al.slice().sort((a,b)=>ord[a.nivel]-ord[b.nivel]).map(a=>
+      '<div class="alerta '+a.nivel+'"><b>'+(a.nivel==="vencido"?"🔴 ":a.nivel==="proximo"?"🟡 ":"🟢 ")+esc(a.tipo)+'</b><span>'+esc(textoAlerta(a))+
+      (a.ultData?' · última em '+esc(a.ultData)+(a.ultKm!=null?' com '+fmtKm(a.ultKm)+' km':''):'')+'</span></div>').join("")
+      : '<div class="empty">Nenhuma troca ou vencimento cadastrado ainda.</div>';
+    // vencimentos
+    const v=(d&&d.venc&&d.venc.length)?d.venc:[{item:"Seguro",data:"29/10/2027",obs:""},{item:"IPVA",data:"",obs:""},{item:"Licenciamento",data:"",obs:""}];
+    $("v_lista").innerHTML = v.map((x,i)=>'<div class="grid venc" data-i="'+i+'"><div><label>'+esc(x.item)+'</label><input type="date" class="v_data" value="'+esc(brParaIso(x.data))+'"></div><div><label>Obs.</label><input class="v_obs" value="'+esc(x.obs||"")+'"></div><input type="hidden" class="v_item" value="'+esc(x.item)+'"></div>').join("");
+    // histórico
+    const l=((d&&d.manut)||[]).slice().sort((a,b)=>(brParaIso(b.data)).localeCompare(brParaIso(a.data)));
+    $("m_lista").innerHTML = l.length ? l.map(m=>'<div class="rec"><div class="top"><div><div class="name">'+esc(m.tipo)+' — '+esc(m.data)+'</div><div class="meta">KM '+fmtKm(m.km)+
+      (m.oficina?' · '+esc(m.oficina):'')+(m.valor!=null?' · '+esc(reais(m.valor)):'')+
+      ((m.proxKm!=null||m.proxData)?'<br>Próxima: '+(m.proxKm!=null?fmtKm(m.proxKm)+' km':'')+(m.proxKm!=null&&m.proxData?' ou ':'')+esc(m.proxData||''):'')+
+      (m.obs?'<br>'+esc(m.obs):'')+'</div></div><button class="btn ghost" data-ex="'+esc(m.id)+'">'+(admExcluir===m.id?'Confirmar exclusão':'Excluir')+'</button></div></div>').join("")
+      : '<div class="empty">Nenhuma manutenção registrada.</div>';
+    $("m_lista").querySelectorAll("[data-ex]").forEach(b=>b.addEventListener("click",async ()=>{
+      const id=b.dataset.ex;
+      if(admExcluir!==id){ admExcluir=id; renderAdm(); return; }
+      admExcluir=null; b.disabled=true;
+      try{ await admApi({acao:"admExcluirManut", token:ler(K_ADM_TOKEN,""), id}); await carregarAdm(); }
+      catch(e){ showMsg($("m_msg"),"err",e.message); renderAdm(); }
+    }));
+  }
+  $("m_tipo").addEventListener("change",e=>$("m_outroBox").classList.toggle("hidden", e.target.value!=="Outro"));
+  $("m_data").value = hoje();
+  $("m_btn").addEventListener("click", async ()=>{
+    const m=$("m_msg");
+    let tipo=$("m_tipo").value; if(tipo==="Outro") tipo=$("m_outro").value.trim();
+    const dados={ id:uid(), tipo, data:isoParaBr($("m_data").value), km:$("m_km").value, oficina:$("m_oficina").value.trim(),
+      valor:$("m_valor").value.trim().replace(/^R\$\s*/,""), proxKm:$("m_proxKm").value, proxData:isoParaBr($("m_proxData").value), obs:$("m_obs").value.trim() };
+    if(!tipo){ showMsg(m,"err","Informe o tipo."); return; }
+    if(!dados.data){ showMsg(m,"err","Informe a data."); return; }
+    if(dados.km===""){ showMsg(m,"err","Informe o KM."); return; }
+    $("m_btn").disabled=true;
+    try{
+      await admApi({acao:"admSalvarManut", token:ler(K_ADM_TOKEN,""), dados});
+      ["m_km","m_oficina","m_valor","m_proxKm","m_proxData","m_obs","m_outro"].forEach(i=>$(i).value="");
+      $("m_data").value=hoje(); showMsg(m,"ok","Manutenção salva."); await carregarAdm();
+    }catch(e){ showMsg(m,"err", /Failed to fetch|NetworkError|Load failed/i.test(e.message)?"Sem internet. Conecte e tente de novo.":e.message); }
+    finally{ $("m_btn").disabled=false; }
+  });
+  $("v_btn").addEventListener("click", async ()=>{
+    const itens=[...document.querySelectorAll("#v_lista .venc")].map(el=>({ item:el.querySelector(".v_item").value, data:isoParaBr(el.querySelector(".v_data").value), obs:el.querySelector(".v_obs").value.trim() }));
+    $("v_btn").disabled=true;
+    try{ await admApi({acao:"admSalvarVenc", token:ler(K_ADM_TOKEN,""), itens}); showMsg($("v_msg"),"ok","Vencimentos salvos."); await carregarAdm(); }
+    catch(e){ showMsg($("v_msg"),"err", /Failed to fetch|NetworkError|Load failed/i.test(e.message)?"Sem internet. Conecte e tente de novo.":e.message); }
+    finally{ $("v_btn").disabled=false; }
+  });
+  $("adm_sair").addEventListener("click", async ()=>{
+    const tk=ler(K_ADM_TOKEN,"");
+    gravar(K_ADM_TOKEN,""); gravar(K_ADM_CACHE,null); admDados=null;
+    try{ await admApi({acao:"admSair", token:tk}); }catch(e){}
+    goTab("saida");
+  });
+  function renderAvisoManut(){
+    const a=ler(K_CACHE,{}).aviso||"", el=$("avisoManut");
+    el.classList.toggle("hidden", !a); el.textContent=a;
+  }
 
   // ---------- início ----------
   recarregarFila().then(()=>{ renderAll(); sincronizar(); });

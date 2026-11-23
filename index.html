@@ -23,6 +23,7 @@
   .wrap{max-width:760px;margin:0 auto;padding:calc(18px + env(safe-area-inset-top)) 14px calc(60px + env(safe-area-inset-bottom))}
   header{display:flex;align-items:center;gap:14px;margin-bottom:14px;background:#375B69;color:#fff;border-radius:14px;padding:16px 18px}
   header .sub{color:rgba(255,255,255,.82);letter-spacing:.04em}
+  header h1{font-size:17px}
   .logo{width:44px;height:44px;display:grid;place-items:center;flex:none}
   h1{font-size:20px;margin:0;line-height:1.2}
   .sub{color:var(--muted);font-size:13px}
@@ -49,6 +50,15 @@
   .passos{margin:6px 0 16px;padding-left:20px;font-size:14px;line-height:1.5}
   .passos li{margin-bottom:6px}
   .seg-h{font-size:15px;margin:18px 0 8px}
+  .lockbtn{margin-left:auto;background:rgba(255,255,255,.14);border:0;color:#fff;border-radius:10px;width:38px;height:38px;font-size:17px;cursor:pointer;flex:none}
+  .adm-km{font-size:14px;margin-bottom:10px}
+  .alerta{border-radius:11px;padding:11px 13px;margin-bottom:8px;border:1px solid var(--line)}
+  .alerta b{display:block;font-size:15px}
+  .alerta span{display:block;font-size:13px;color:var(--muted);margin-top:2px}
+  .alerta.vencido{background:#fdeeee;border-color:#e7b4ae}
+  .alerta.proximo{background:var(--amber-l);border-color:#f0d9ad}
+  .alerta.ok{background:#f3f6f7}
+  .venc{margin-bottom:10px}
   .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
   .card h2{font-size:16px;margin:0 0 4px}
   .card .hint{color:var(--muted);font-size:13px;margin:0 0 14px}
@@ -116,12 +126,14 @@
       <h1>Nissan Versa - Versati</h1>
       <div class="sub">Incorporadora e Construtora</div>
     </div>
+    <button class="lockbtn" id="btnAdm" type="button" aria-label="Área restrita" title="Área restrita">🔒</button>
   </header>
 
   <div id="status" class="status free"><div class="dot"></div><div><b>Carregando…</b><span>Abrindo…</span></div></div>
 
   <div id="conn" class="conn hidden"></div>
   <div id="falhas" class="falhas hidden"></div>
+  <div id="avisoManut" class="conn wait hidden"></div>
 
   <div class="tabs" role="tablist">
     <button data-tab="saida" class="on">Saída</button>
@@ -290,6 +302,50 @@
       <li>Avise a seguradora (0800 31 86546) e a Green Park.</li>
     </ol>
     <p class="hint">Carro reserva: como o seguro é da empresa, a locação fica no nome de quem vai dirigir, que precisa ter CNH, RG e cartão de crédito para a caução.</p>
+  </section>
+
+  <section id="tab-gestao" class="card hidden">
+    <h2>🔒 Área restrita</h2>
+    <p class="hint" id="adm_hint">Somente para a administração.</p>
+    <div id="adm_login" class="hidden">
+      <div id="adm_criarBox" class="hidden"><p class="hint">Primeiro acesso: crie a senha da área restrita (mínimo 6 caracteres).</p></div>
+      <label for="adm_senha">Senha</label>
+      <input id="adm_senha" type="password" autocomplete="current-password">
+      <div id="adm_senha2Box" class="hidden" style="margin-top:10px"><label for="adm_senha2">Repita a senha</label><input id="adm_senha2" type="password" autocomplete="new-password"></div>
+      <button class="btn primary" type="button" id="adm_btnEntrar">Entrar</button>
+      <div class="msg" id="adm_msg"></div>
+    </div>
+    <div id="adm_area" class="hidden">
+      <div id="adm_off" class="conn off hidden"></div>
+      <div class="adm-km">KM atual do carro: <b id="adm_km">—</b></div>
+      <div id="adm_alertas"></div>
+
+      <h3 class="seg-h">Registrar troca / manutenção</h3>
+      <div class="grid">
+        <div class="full"><label>Tipo <span class="req">*</span></label>
+          <select id="m_tipo"><option>Troca de óleo</option><option>Revisão</option><option>Pneus</option><option>Alinhamento e balanceamento</option><option>Freios</option><option>Bateria</option><option>Outro</option></select></div>
+        <div class="full hidden" id="m_outroBox"><label>Qual?</label><input id="m_outro"></div>
+        <div><label>Data <span class="req">*</span></label><input id="m_data" type="date"></div>
+        <div><label>KM <span class="req">*</span></label><input id="m_km" type="number" inputmode="numeric" min="0"></div>
+        <div><label>Oficina</label><input id="m_oficina"></div>
+        <div><label>Valor (R$)</label><input id="m_valor" inputmode="decimal" placeholder="Ex.: 250,00"></div>
+        <div><label>Próxima troca (KM)</label><input id="m_proxKm" type="number" inputmode="numeric" min="0"></div>
+        <div><label>Próxima troca (data)</label><input id="m_proxData" type="date"></div>
+        <div class="full"><label>Observações</label><textarea id="m_obs" placeholder="Ex.: óleo 5W30, filtro trocado"></textarea></div>
+      </div>
+      <button class="btn primary" type="button" id="m_btn">Salvar manutenção</button>
+      <div class="msg" id="m_msg"></div>
+
+      <h3 class="seg-h">Vencimentos</h3>
+      <div id="v_lista"></div>
+      <button class="btn ghost" type="button" id="v_btn">Salvar vencimentos</button>
+      <div class="msg" id="v_msg"></div>
+
+      <h3 class="seg-h">Histórico de manutenções</h3>
+      <div id="m_lista"></div>
+
+      <div class="toolbar" style="margin-top:16px"><button class="btn ghost" type="button" id="adm_sair">Sair da área restrita</button></div>
+    </div>
   </section>
 </div>
 <script src="app.js"></script>
