@@ -44,7 +44,11 @@
   const ZAP = "5512985997740";
   function abrirZap(texto){
     const t = encodeURIComponent(texto);
-    const app = "whatsapp://send?phone="+ZAP+"&text="+t, web = "https://wa.me/"+ZAP+"?text="+t;
+    const web = "https://wa.me/"+ZAP+"?text="+t;
+    // Android: abre sempre o WhatsApp Business (número profissional); se não tiver o Business, cai no WhatsApp comum
+    const app = /Android/i.test(navigator.userAgent)
+      ? "intent://send?phone="+ZAP+"&text="+t+"#Intent;scheme=whatsapp;package=com.whatsapp.w4b;S.browser_fallback_url="+encodeURIComponent(web)+";end"
+      : "whatsapp://send?phone="+ZAP+"&text="+t;
     let saiu = false; const marca = ()=>{ saiu = true; };
     document.addEventListener("visibilitychange", marca, { once:true });
     window.location.href = app; // abre o WhatsApp direto (funciona sem internet: a mensagem fica na fila do WhatsApp)
