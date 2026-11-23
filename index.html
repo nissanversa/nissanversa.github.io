@@ -32,9 +32,22 @@
   .status.busy .dot{background:var(--amber)}
   .status b{display:block;font-size:15px}
   .status span{color:var(--muted);font-size:13px}
-  .tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:#e7ece9;padding:5px;border-radius:12px;margin-bottom:14px}
+  .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;background:#e7ece9;padding:5px;border-radius:12px;margin-bottom:14px}
   .tabs button{border:0;background:transparent;padding:10px 6px;border-radius:9px;font:600 14px system-ui,sans-serif;color:var(--muted);cursor:pointer}
   .tabs button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  .tabs button.sos{color:#b3261e}
+  .tabs button.sos.on{background:#b3261e;color:#fff}
+  .seg-info{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px;background:#f5f7f6;border-radius:10px;padding:12px;margin-bottom:14px}
+  .seg-info b{color:var(--muted);font-weight:600}
+  .call{display:flex;align-items:center;justify-content:space-between;gap:10px;text-decoration:none;color:var(--ink);border:1px solid var(--line);border-radius:11px;padding:12px 14px;margin-bottom:8px;background:#fff}
+  .call b{display:block;font-size:15px}
+  .call span{display:block;font-size:12px;color:var(--muted)}
+  .call i{font-style:normal;font-weight:700;color:var(--green-d);white-space:nowrap;font-size:14px}
+  .call.urg{border-color:#b3261e;background:#fdeeee}
+  .call.urg i{color:#b3261e}
+  .passos{margin:6px 0 16px;padding-left:20px;font-size:14px;line-height:1.5}
+  .passos li{margin-bottom:6px}
+  .seg-h{font-size:15px;margin:18px 0 8px}
   .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
   .card h2{font-size:16px;margin:0 0 4px}
   .card .hint{color:var(--muted);font-size:13px;margin:0 0 14px}
@@ -115,6 +128,7 @@
     <button data-tab="saida" class="on">Saída</button>
     <button data-tab="chegada">Chegada</button>
     <button data-tab="historico">Histórico</button>
+    <button data-tab="seguro" class="sos">🚨 Seguro</button>
   </div>
 
   <section id="tab-saida" class="card">
@@ -220,6 +234,63 @@
     </div>
     <div class="toolbar"><button class="btn ghost" id="btnAtualizar" type="button">Atualizar</button></div>
     <div id="lista"><div class="loading">Carregando…</div></div>
+  </section>
+
+  <section id="tab-seguro" class="card hidden">
+    <h2>🚨 Seguro e emergências</h2>
+    <p class="hint">Funciona sem internet. Toque no número para ligar.</p>
+    <div class="seg-info">
+      <b>Seguradora</b><span>Tokio Marine</span>
+      <b>Segurado</b><span>Versati Incorporadora e Construtora Ltda</span>
+      <b>Apólice</b><span>05.31 / 39837125</span>
+      <b>Vencimento</b><span>29/10/2027</span>
+      <b>Veículo</b><span>Nissan Versa Sense 1.6 16V Flex Aut.</span>
+      <b>Placa</b><span>TIP7J40</span>
+      <b>CI</b><span>61926288923058</span>
+    </div>
+
+    <a class="call urg" href="tel:08003186546"><div><b>Guincho e Assistência 24h</b><span>Pane, guincho, pneu, chaveiro · 24 horas</span></div><i>0800 31 86546</i></a>
+    <a class="call urg" href="tel:190"><div><b>Polícia</b><span>Acidente com vítima, roubo ou furto</span></div><i>190</i></a>
+    <a class="call urg" href="tel:192"><div><b>SAMU</b><span>Pessoa ferida</span></div><i>192</i></a>
+    <a class="call urg" href="tel:193"><div><b>Bombeiros</b><span>Incêndio, vítima presa no carro</span></div><i>193</i></a>
+
+    <h3 class="seg-h">Seguradora</h3>
+    <a class="call" href="tel:08003186546"><div><b>Aviso de sinistro</b><span>Acidente, roubo/furto · seg. a sex., 8h às 20h</span></div><i>0800 31 86546</i></a>
+    <a class="call" href="tel:08007092886"><div><b>Vidros, faróis, lanternas e retrovisores</b><span>Também para-choque, martelinho, lataria, rodas e pneus · seg. a sex. 8h–22h, sáb. 8h–12h</span></div><i>0800 709 2886</i></a>
+    <a class="call" href="tel:08002086546"><div><b>Carro reserva</b><span>Depois de avisar o sinistro · seg. a sex. 8h–20h, sáb. 8h–14h</span></div><i>0800 20 86546</i></a>
+    <a class="call" href="https://wa.me/5511995786546"><div><b>WhatsApp da Tokio Marine</b><span>Atendimento pelo WhatsApp</span></div><i>11 99578-6546</i></a>
+    <a class="call" href="tel:08007039000"><div><b>SAC Tokio Marine</b><span>24 horas</span></div><i>0800 703 9000</i></a>
+
+    <h3 class="seg-h">Corretora e empresa</h3>
+    <a class="call" href="tel:1239344705"><div><b>Corretora Nova Frente</b><span>Corretora do seguro</span></div><i>(12) 3934-4705</i></a>
+    <a class="call" href="https://wa.me/5512985997740"><div><b>Avisar a Green Park</b><span>Administração · WhatsApp</span></div><i>(12) 98599-7740</i></a>
+
+    <h3 class="seg-h">Em caso de acidente</h3>
+    <ol class="passos">
+      <li><b>Segurança primeiro:</b> ligue o pisca-alerta e coloque o triângulo a pelo menos 30 metros do carro.</li>
+      <li><b>Tem alguém ferido?</b> Ligue para o SAMU (192) ou os Bombeiros (193). Não tire a pessoa do lugar.</li>
+      <li><b>Fotografe tudo:</b> os danos dos carros, as placas, o local e a posição dos veículos.</li>
+      <li><b>Anote os dados do outro motorista:</b> nome, CPF, CNH, telefone, placa e seguradora.</li>
+      <li><b>Não assuma a culpa</b> nem faça acordo ou pagamento na hora.</li>
+      <li><b>Faça o Boletim de Ocorrência</b> (pode ser pela Delegacia Eletrônica, se não houver vítima).</li>
+      <li><b>Avise a seguradora</b> pelo 0800 31 86546, informando a apólice e a placa acima.</li>
+      <li><b>Avise a Green Park</b> e descreva o ocorrido nas observações da chegada.</li>
+    </ol>
+
+    <h3 class="seg-h">Pane ou pneu furado</h3>
+    <ol class="passos">
+      <li>Pare em local seguro, ligue o pisca-alerta e coloque o triângulo.</li>
+      <li>Ligue para a <b>Assistência 24h (0800 31 86546)</b> e informe a placa <b>TIP7J40</b> e o endereço onde está.</li>
+      <li>Avise a Green Park.</li>
+    </ol>
+
+    <h3 class="seg-h">Roubo ou furto</h3>
+    <ol class="passos">
+      <li>Não reaja. Em segurança, ligue para a <b>Polícia (190)</b>.</li>
+      <li>Faça o <b>Boletim de Ocorrência</b>.</li>
+      <li>Avise a seguradora (0800 31 86546) e a Green Park.</li>
+    </ol>
+    <p class="hint">Carro reserva: como o seguro é da empresa, a locação fica no nome de quem vai dirigir, que precisa ter CNH, RG e cartão de crédito para a caução.</p>
   </section>
 </div>
 <script src="app.js"></script>

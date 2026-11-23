@@ -96,7 +96,7 @@
   const tabs = document.querySelectorAll(".tabs button");
   function goTab(name){
     tabs.forEach(b=>b.classList.toggle("on", b.dataset.tab===name));
-    ["saida","chegada","historico"].forEach(t=>$("tab-"+t).classList.toggle("hidden", t!==name));
+    ["saida","chegada","historico","seguro"].forEach(t=>$("tab-"+t).classList.toggle("hidden", t!==name));
   }
   tabs.forEach(b=>b.addEventListener("click",()=>{ goTab(b.dataset.tab); sincronizar(); }));
 
