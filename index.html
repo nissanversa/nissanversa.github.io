@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Nissan Versa - Versati</title>
-<meta name="theme-color" content="#1f5fbf">
+<meta name="theme-color" content="#375B69">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -13,16 +13,17 @@
 <meta name="apple-mobile-web-app-title" content="Nissan Versa">
 <style>
   :root{
-    --bg:#f3f5f9; --card:#ffffff; --ink:#1a2130; --muted:#646e7f; --line:#dde3ec;
-    --green:#1f5fbf; --green-d:#174a96; --green-l:#e7effb;
+    --bg:#f2f5f6; --card:#ffffff; --ink:#1c2a30; --muted:#61717a; --line:#dbe3e6;
+    --green:#375B69; --green-d:#2a4651; --green-l:#e4edf0;
     --amber:#b7791f; --amber-l:#fdf3e1; --red:#b8402f; --red-l:#fbe9e6;
     --radius:14px;
   }
   *{box-sizing:border-box}
   html,body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:15px}
   .wrap{max-width:760px;margin:0 auto;padding:calc(18px + env(safe-area-inset-top)) 14px calc(60px + env(safe-area-inset-bottom))}
-  header{display:flex;align-items:center;gap:12px;margin-bottom:14px}
-  .logo{width:42px;height:42px;border-radius:12px;background:var(--green);display:grid;place-items:center;flex:none}
+  header{display:flex;align-items:center;gap:14px;margin-bottom:14px;background:#375B69;color:#fff;border-radius:14px;padding:16px 18px}
+  header .sub{color:rgba(255,255,255,.82);letter-spacing:.04em}
+  .logo{width:44px;height:44px;display:grid;place-items:center;flex:none}
   h1{font-size:20px;margin:0;line-height:1.2}
   .sub{color:var(--muted);font-size:13px}
   .status{border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;display:flex;gap:12px;align-items:center;border:1px solid var(--line);background:var(--card)}
@@ -32,12 +33,12 @@
   .status.busy .dot{background:var(--amber)}
   .status b{display:block;font-size:15px}
   .status span{color:var(--muted);font-size:13px}
-  .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;background:#e4eaf3;padding:5px;border-radius:12px;margin-bottom:14px}
+  .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;background:#e1e9ec;padding:5px;border-radius:12px;margin-bottom:14px}
   .tabs button{border:0;background:transparent;padding:10px 6px;border-radius:9px;font:600 14px system-ui,sans-serif;color:var(--muted);cursor:pointer}
   .tabs button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
   .tabs button.sos{color:#b3261e}
   .tabs button.sos.on{background:#b3261e;color:#fff}
-  .seg-info{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px;background:#f4f6fa;border-radius:10px;padding:12px;margin-bottom:14px}
+  .seg-info{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px;background:#f3f6f7;border-radius:10px;padding:12px;margin-bottom:14px}
   .seg-info b{color:var(--muted);font-weight:600}
   .call{display:flex;align-items:center;justify-content:space-between;gap:10px;text-decoration:none;color:var(--ink);border:1px solid var(--line);border-radius:11px;padding:12px 14px;margin-bottom:8px;background:#fff}
   .call b{display:block;font-size:15px}
@@ -66,7 +67,7 @@
   .btn.primary{background:var(--green);color:#fff;width:100%;margin-top:16px}
   .btn.primary:hover{background:var(--green-d)}
   .btn.primary:disabled{opacity:.5;cursor:not-allowed}
-  .btn.ghost{background:#eaeff6;color:var(--ink);padding:9px 14px;font-size:13px}
+  .btn.ghost{background:#e8eef0;color:var(--ink);padding:9px 14px;font-size:13px}
   .btn.zap{background:#25d366;color:#fff;margin-top:10px;width:100%}
   .msg{margin-top:12px;padding:11px 13px;border-radius:10px;font-size:14px;display:none}
   .msg.ok{display:block;background:var(--green-l);color:var(--green-d)}
@@ -81,7 +82,7 @@
   .kmcalc b{color:var(--ink)}
   .filters{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
   .totals{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
-  .tot{background:#f4f6fa;border-radius:10px;padding:10px 12px}
+  .tot{background:#f3f6f7;border-radius:10px;padding:10px 12px}
   .tot b{display:block;font-size:19px}
   .tot span{font-size:12px;color:var(--muted)}
   .rec{border-top:1px solid var(--line);padding:12px 0}
@@ -96,7 +97,7 @@
   .empty{color:var(--muted);text-align:center;padding:26px 8px;font-size:14px}
   .loading{color:var(--muted);font-size:14px;padding:6px 0}
   @media (max-width:520px){.grid{grid-template-columns:1fr}.filters{grid-template-columns:1fr}}
-  .lock{background:#eaeff6;color:var(--muted);pointer-events:none}
+  .lock{background:#e8eef0;color:var(--muted);pointer-events:none}
   .conn{border-radius:12px;padding:11px 14px;margin-bottom:12px;font-size:14px;font-weight:500}
   .conn.off{background:#eceff1;color:#37474f;border:1px solid #cfd8dc}
   .conn.wait{background:var(--amber-l);color:#8a5a12}
@@ -110,12 +111,10 @@
 <body>
 <div class="wrap">
   <header>
-    <div class="logo" aria-hidden="true">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14v-5l-2-5H7l-2 5v5z"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/><path d="M5 12h14"/></svg>
-    </div>
+    <div class="logo" aria-hidden="true"><svg width="44" height="44" viewBox="0 0 1922 1922"><polygon fill="#fff" points="160,810 961,6 1762,810 961,1616"/><polygon fill="#375B69" points="737,644 964,452 1195,644 1195,1660 737,1660"/><polygon fill="#fff" points="805,677 927,574 927,1532 877,1532 805,1461"/><polygon fill="#fff" points="1001,574 1123,675 1123,1460 1050,1532 1001,1532"/><polygon fill="#fff" points="92,857 961,1726 1830,857 1876,903 1876,961 961,1875 45,959 45,904"/></svg></div>
     <div>
       <h1>Nissan Versa - Versati</h1>
-      <div class="sub">Registro de saída e chegada do carro</div>
+      <div class="sub">Incorporadora e Construtora</div>
     </div>
   </header>
 
