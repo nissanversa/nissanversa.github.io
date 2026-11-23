@@ -1,14 +1,14 @@
 {
-  "name": "Uso do Carro — Green Park",
-  "short_name": "Uso do Carro",
-  "description": "Registro de saída e chegada do carro da Green Park",
+  "name": "Nissan Versa - Versati",
+  "short_name": "Nissan Versa",
+  "description": "Registro de saída e chegada do Nissan Versa da Versati",
   "lang": "pt-BR",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#f4f6f3",
-  "theme_color": "#2f7d4f",
+  "background_color": "#f3f5f9",
+  "theme_color": "#1f5fbf",
   "icons": [
     {
       "src": "icon-192.png",
