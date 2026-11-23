@@ -34,8 +34,8 @@
   .status.busy .dot{background:var(--amber)}
   .status b{display:block;font-size:15px}
   .status span{color:var(--muted);font-size:13px}
-  .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;background:#e1e9ec;padding:5px;border-radius:12px;margin-bottom:14px}
-  .tabs button{border:0;background:transparent;padding:10px 6px;border-radius:9px;font:600 14px system-ui,sans-serif;color:var(--muted);cursor:pointer}
+  .tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;background:#e1e9ec;padding:5px;border-radius:12px;margin-bottom:14px}
+  .tabs button{border:0;background:transparent;padding:10px 2px;border-radius:9px;font:600 13px system-ui,sans-serif;color:var(--muted);cursor:pointer}
   .tabs button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
   .tabs button.sos{color:#b3261e}
   .tabs button.sos.on{background:#b3261e;color:#fff}
@@ -59,6 +59,12 @@
   .alerta.proximo{background:var(--amber-l);border-color:#f0d9ad}
   .alerta.ok{background:#f3f6f7}
   .venc{margin-bottom:10px}
+  .ag-dia{font-weight:700;margin:14px 0 6px;font-size:14px;color:var(--green-d)}
+  .ag-item{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid var(--line);border-radius:11px;padding:10px 12px;margin-bottom:6px;background:#fff}
+  .ag-item b{display:block;font-size:14px}
+  .ag-item span{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+  .ag-item.minha{border-color:var(--green);background:var(--green-l)}
+  .conn.agd{background:var(--green-l);color:var(--green-d);border:1px solid #c9d9df}
   .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
   .card h2{font-size:16px;margin:0 0 4px}
   .card .hint{color:var(--muted);font-size:13px;margin:0 0 14px}
@@ -134,12 +140,14 @@
   <div id="conn" class="conn hidden"></div>
   <div id="falhas" class="falhas hidden"></div>
   <div id="avisoManut" class="conn wait hidden"></div>
+  <div id="proxReserva" class="conn agd hidden"></div>
 
   <div class="tabs" role="tablist">
     <button data-tab="saida" class="on">Saída</button>
     <button data-tab="chegada">Chegada</button>
     <button data-tab="historico">Histórico</button>
-    <button data-tab="seguro" class="sos">🚨 Seguro</button>
+    <button data-tab="agenda">Agenda</button>
+    <button data-tab="seguro" class="sos">Seguro</button>
   </div>
 
   <section id="tab-saida" class="card">
@@ -245,6 +253,24 @@
     </div>
     <div class="toolbar"><button class="btn ghost" id="btnAtualizar" type="button">Atualizar</button></div>
     <div id="lista"><div class="loading">Carregando…</div></div>
+  </section>
+
+  <section id="tab-agenda" class="card hidden">
+    <h2>Agenda do carro</h2>
+    <p class="hint">Reserve com antecedência. O app não deixa marcar dois usos no mesmo horário. Para reservar é preciso internet.</p>
+    <div id="ag_lista"></div>
+    <h3 class="seg-h">Nova reserva</h3>
+    <div class="grid">
+      <div class="full"><label>Nome <span class="req">*</span></label><input id="a_nome" list="nomes" placeholder="Quem vai usar o carro"></div>
+      <div class="full"><label>Data <span class="req">*</span></label><input id="a_data" type="date"></div>
+      <div><label>Início <span class="req">*</span></label><input id="a_ini" type="time"></div>
+      <div><label>Fim <span class="req">*</span></label><input id="a_fim" type="time"></div>
+      <div class="full"><label>Destino <span class="req">*</span></label><input id="a_destino" list="destinos" placeholder="Ex.: Obra Diadema, cartório, banco…"></div>
+      <div class="full"><label>Finalidade <span class="req">*</span></label><select id="a_fin"></select></div>
+      <div class="full hidden" id="a_outroBox"><label>Qual é a finalidade?</label><input id="a_outro"></div>
+    </div>
+    <button class="btn primary" type="button" id="a_btn">Reservar</button>
+    <div class="msg" id="a_msg"></div>
   </section>
 
   <section id="tab-seguro" class="card hidden">

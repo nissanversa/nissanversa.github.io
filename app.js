@@ -96,7 +96,7 @@
   const tabs = document.querySelectorAll(".tabs button");
   function goTab(name){
     tabs.forEach(b=>b.classList.toggle("on", b.dataset.tab===name));
-    ["saida","chegada","historico","seguro","gestao"].forEach(t=>$("tab-"+t).classList.toggle("hidden", t!==name));
+    ["saida","chegada","historico","agenda","seguro","gestao"].forEach(t=>$("tab-"+t).classList.toggle("hidden", t!==name));
   }
   tabs.forEach(b=>b.addEventListener("click",()=>{ goTab(b.dataset.tab); sincronizar(); }));
 
@@ -205,7 +205,7 @@
   $("f_nome").addEventListener("input",renderLista);
   $("btnAtualizar").addEventListener("click",()=>sincronizar());
 
-  function renderAll(){ renderAvisoManut(); renderConexao(); renderStatus(); renderSaidaHints(); renderAbertos(); renderLista(); }
+  function renderAll(){ renderAvisoManut(); renderAgenda(); renderConexao(); renderStatus(); renderSaidaHints(); renderAbertos(); renderLista(); }
 
   // ---------- comunicação com a planilha ----------
   function resumo(it){
@@ -242,7 +242,7 @@
     try{
       const r = await fetch(API+"?api=listar&t="+Date.now());
       const j = await r.json();
-      if(j && j.ok){ servidor=j.registros||[]; ultimaSync=Date.now(); gravar(K_CACHE,{registros:servidor, quando:ultimaSync, aviso:j.aviso||""}); online=true; loaded=true; }
+      if(j && j.ok){ servidor=j.registros||[]; ultimaSync=Date.now(); gravar(K_CACHE,{registros:servidor, quando:ultimaSync, aviso:j.aviso||"", agenda:j.agenda||[]}); online=true; loaded=true; }
     }catch(e){ online=false; }
   }
   async function sincronizar(){
@@ -276,6 +276,9 @@
       return;
     }
     delete $("s_btn").dataset.force;
+    const hs=$("s_hora").value, resv=agenda().find(r=>r.data===br(hoje()) && r.inicio<=hs && hs<r.fim && r.nome.trim().toLowerCase()!==nome.toLowerCase());
+    if(resv && !$("s_btn").dataset.forceAg){ $("s_btn").dataset.forceAg="1"; showMsg(m,"warn","Atenção: o carro está reservado para "+resv.nome+" das "+resv.inicio+" às "+resv.fim+". Combine com a pessoa ou toque em Registrar saída de novo para registrar mesmo assim."); return; }
+    delete $("s_btn").dataset.forceAg;
     const semNet = online===false || navigator.onLine===false;
     const dS={ id:uid(), nome, destino, finalidade:fin, saidaData:br(hoje()), saidaHora:$("s_hora").value,
       saidaTs:ts(hoje(),$("s_hora").value), kmInicial:Number(km), combSaida:seg.s_comb,
@@ -439,6 +442,91 @@
     const a=ler(K_CACHE,{}).aviso||"", el=$("avisoManut");
     el.classList.toggle("hidden", !a); el.textContent=a;
   }
+
+
+  // ---------- AGENDA DE RESERVAS ----------
+  const K_AG_CHAVES="usoCarroAgChaves";
+  let agCancelando=null;
+  const agChaves = () => ler(K_AG_CHAVES,{}) || {};
+  const rnd = () => { const a=new Uint8Array(16); crypto.getRandomValues(a); return Array.from(a).map(x=>x.toString(16).padStart(2,"0")).join(""); };
+  const agenda = () => (ler(K_CACHE,{}).agenda || []);
+  function diaLabel(dbr){
+    const iso=brParaIso(dbr), h=hoje();
+    if(iso===h) return "Hoje";
+    const t=new Date(h+"T12:00"); t.setDate(t.getDate()+1);
+    if(iso===t.getFullYear()+"-"+pad(t.getMonth()+1)+"-"+pad(t.getDate())) return "Amanhã";
+    const s=new Date(iso+"T12:00").toLocaleDateString("pt-BR",{weekday:"long"});
+    return s.charAt(0).toUpperCase()+s.slice(1);
+  }
+  function txtReserva(r, cancel){
+    return (cancel?"❌ *RESERVA CANCELADA*":"📅 *RESERVA DO CARRO*")+"\nNome: "+r.nome+"\nData: "+r.data+" ("+diaLabel(r.data)+")\nHorário: "+r.inicio+" às "+r.fim+"\nDestino: "+r.destino+"\nFinalidade: "+r.finalidade;
+  }
+  function proximaReserva(){
+    const h=hoje(), ag=agora();
+    return agenda().find(r=>{ const iso=brParaIso(r.data); return iso>h || (iso===h && r.fim>ag); });
+  }
+  function renderAgenda(){
+    const l=agenda(), box=$("ag_lista"), ch=agChaves(), adm=!!ler(K_ADM_TOKEN,"");
+    const futuras=l.filter(r=>{ const iso=brParaIso(r.data); return iso>hoje() || (iso===hoje() && r.fim>agora()); });
+    if(!futuras.length){ box.innerHTML='<div class="empty">Nenhuma reserva marcada.</div>'; }
+    else{
+      let html="", dia="";
+      futuras.forEach(r=>{
+        if(r.data!==dia){ dia=r.data; html+='<div class="ag-dia">'+esc(diaLabel(r.data))+' · '+esc(r.data)+'</div>'; }
+        const meu=!!ch[r.id];
+        html+='<div class="ag-item'+(meu?' minha':'')+'"><div><b>'+esc(r.inicio)+' às '+esc(r.fim)+' · '+esc(r.nome)+'</b><span>'+esc(r.destino)+' · '+esc(r.finalidade)+(meu?' · <i>sua reserva</i>':'')+'</span></div>'+
+          ((meu||adm)?'<button class="btn ghost" type="button" data-cancel="'+esc(r.id)+'">'+(agCancelando===r.id?'Confirmar':'Cancelar')+'</button>':'')+'</div>';
+      });
+      box.innerHTML=html;
+    }
+    box.querySelectorAll("[data-cancel]").forEach(b=>b.addEventListener("click",()=>cancelarReserva(b.dataset.cancel)));
+    const pr=$("proxReserva"), p=proximaReserva();
+    if(p){ pr.classList.remove("hidden"); pr.textContent="📅 Próxima reserva: "+diaLabel(p.data)+" ("+p.data+"), "+p.inicio+" às "+p.fim+" · "+p.nome+" → "+p.destino; }
+    else{ pr.classList.add("hidden"); pr.textContent=""; }
+  }
+  async function cancelarReserva(id){
+    const m=$("a_msg"), r=agenda().find(x=>x.id===id); if(!r) return;
+    if(agCancelando!==id){ agCancelando=id; renderAgenda(); return; }
+    agCancelando=null;
+    const ch=agChaves(), chave=ch[id], tk=ler(K_ADM_TOKEN,"");
+    try{
+      const corpo = chave ? {acao:"cancelarReserva", id, chave} : {acao:"admCancelarReserva", id, token:tk};
+      const resp=await fetch(API,{method:"POST",body:JSON.stringify(corpo),headers:{"Content-Type":"text/plain;charset=utf-8"}}).then(x=>x.json());
+      if(!resp.ok) throw new Error(resp.erro==="SESSAO"?"Entre de novo na área restrita para cancelar.":(resp.erro||"Erro"));
+      delete ch[id]; gravar(K_AG_CHAVES,ch);
+      const z=txtReserva(r,true); abrirZap(z);
+      showMsg(m,"ok","Reserva cancelada."); botaoZap(m,z);
+      await sincronizar();
+    }catch(e){ showMsg(m,"err", /Failed to fetch|NetworkError|Load failed/i.test(e.message)?"Sem internet. Para cancelar é preciso estar conectado.":e.message); renderAgenda(); }
+  }
+  $("a_fin").innerHTML=$("s_finalidade").innerHTML;
+  $("a_fin").addEventListener("change",e=>$("a_outroBox").classList.toggle("hidden", e.target.value!=="Outro"));
+  function defaultsAgenda(){ $("a_data").min=hoje(); if(!$("a_data").value) $("a_data").value=hoje(); const n=ler(K_NOME,""); if(n && !$("a_nome").value) $("a_nome").value=n; }
+  defaultsAgenda();
+  $("a_btn").addEventListener("click", async ()=>{
+    const m=$("a_msg");
+    const nome=$("a_nome").value.trim(), dataIso=$("a_data").value, ini=$("a_ini").value, fim=$("a_fim").value, destino=$("a_destino").value.trim();
+    let fin=$("a_fin").value; if(fin==="Outro"){ const o=$("a_outro").value.trim(); if(!o){ showMsg(m,"err","Descreva a finalidade."); return; } fin="Outro: "+o; }
+    if(!nome||!dataIso||!ini||!fim||!destino||!fin){ showMsg(m,"err","Preencha todos os campos."); return; }
+    if(dataIso<hoje()){ showMsg(m,"err","Não dá para reservar uma data que já passou."); return; }
+    if(fim<=ini){ showMsg(m,"err","O horário de fim precisa ser depois do início."); return; }
+    if(dataIso===hoje() && fim<=agora()){ showMsg(m,"err","Esse horário de hoje já passou."); return; }
+    const data=isoParaBr(dataIso);
+    const conf=agenda().find(r=>r.data===data && ini<r.fim && fim>r.inicio);
+    if(conf){ showMsg(m,"err","Horário já reservado por "+conf.nome+" ("+conf.inicio+" às "+conf.fim+"). Escolha outro horário."); return; }
+    const d={ id:uid(), chave:rnd(), nome, data, inicio:ini, fim, destino, finalidade:fin };
+    $("a_btn").disabled=true;
+    try{
+      const resp=await fetch(API,{method:"POST",body:JSON.stringify({acao:"reservar", dados:d}),headers:{"Content-Type":"text/plain;charset=utf-8"}}).then(x=>x.json());
+      if(!resp.ok) throw new Error(resp.erro||"Erro");
+      const ch=agChaves(); ch[d.id]=d.chave; gravar(K_AG_CHAVES,ch); gravar(K_NOME,nome);
+      const z=txtReserva(d,false); abrirZap(z);
+      ["a_ini","a_fim","a_destino","a_outro"].forEach(i=>$(i).value=""); $("a_fin").value=""; $("a_outroBox").classList.add("hidden");
+      showMsg(m,"ok","Reserva feita: "+diaLabel(data)+" ("+data+"), "+ini+" às "+fim+"."); botaoZap(m,z);
+      await sincronizar();
+    }catch(e){ showMsg(m,"err", /Failed to fetch|NetworkError|Load failed/i.test(e.message)?"Sem internet. Para reservar é preciso estar conectado.":e.message); }
+    finally{ $("a_btn").disabled=false; }
+  });
 
   // ---------- início ----------
   recarregarFila().then(()=>{ renderAll(); sincronizar(); });
