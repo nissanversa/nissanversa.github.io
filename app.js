@@ -37,7 +37,33 @@
   const esc = s => String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const uid = () => "m" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2,10);
   const horaTxt = t => { const d=new Date(t); return pad(d.getDate())+"/"+pad(d.getMonth()+1)+" "+pad(d.getHours())+":"+pad(d.getMinutes()); };
-  function showMsg(el,type,text){ el.className="msg "+type; el.textContent=text; if(type==="ok") setTimeout(()=>{ if(el.textContent===text) el.className="msg"; },7000); }
+  function showMsg(el,type,text){ el.className="msg "+type; el.textContent=text; if(type==="ok") setTimeout(()=>{ if(el.firstChild && el.firstChild.textContent===text) el.className="msg"; },60000); }
+
+
+  // ---------- aviso no WhatsApp ----------
+  const ZAP = "5512985997740";
+  function abrirZap(texto){
+    const t = encodeURIComponent(texto);
+    const app = "whatsapp://send?phone="+ZAP+"&text="+t, web = "https://wa.me/"+ZAP+"?text="+t;
+    let saiu = false; const marca = ()=>{ saiu = true; };
+    document.addEventListener("visibilitychange", marca, { once:true });
+    window.location.href = app; // abre o WhatsApp direto (funciona sem internet: a mensagem fica na fila do WhatsApp)
+    setTimeout(()=>{ if(!saiu && !document.hidden) window.open(web, "_blank"); }, 1500);
+  }
+  function botaoZap(el, texto){
+    const b=document.createElement("button"); b.type="button"; b.className="btn zap"; b.textContent="Enviar aviso no WhatsApp";
+    b.addEventListener("click",()=>abrirZap(texto)); el.appendChild(document.createElement("br")); el.appendChild(b);
+  }
+  function txtSaida(d){
+    return "🚗 *SAÍDA DO CARRO*\nNome: "+d.nome+"\nDestino: "+d.destino+"\nFinalidade: "+d.finalidade+
+      "\nData: "+d.saidaData+" às "+d.saidaHora+"\nKM inicial: "+fmtKm(d.kmInicial)+"\nTanque: "+comb(d.combSaida,d.nivelSaida)+
+      (d.obsSaida?"\nObs.: "+d.obsSaida:"");
+  }
+  function txtChegada(r,d){
+    return "🏁 *CHEGADA DO CARRO*\nNome: "+r.nome+"\nDestino: "+r.destino+"\nSaída: "+r.saidaData+" às "+r.saidaHora+
+      "\nChegada: "+d.chegadaData+" às "+d.chegadaHora+"\nKM inicial: "+fmtKm(r.kmInicial)+" · KM final: "+fmtKm(d.kmFinal)+
+      "\nKM rodados: "+fmtKm(d.kmFinal-r.kmInicial)+"\nTanque: "+comb(d.combChegada,d.nivelChegada)+(d.obsChegada?"\nObs.: "+d.obsChegada:"");
+  }
 
   // registros = planilha + o que ainda está guardado no celular
   function registros(){
@@ -95,9 +121,11 @@
     const q=fila().length, el=$("conn");
     if(online===false){
       el.className="conn off";
-      el.textContent = "Sem internet — pode registrar normalmente." + (q? " "+q+" registro(s) guardado(s) no celular, aguardando envio. "+AVISO_ENVIO:"");
+      el.textContent = "Sem internet — pode registrar normalmente." + (q? " ⚠️ "+q+" registro(s) guardado(s) no celular, aguardando envio. "+AVISO_ENVIO:"");
     } else if(q){
       el.className="conn wait"; el.textContent = "Enviando "+q+" registro(s) guardado(s) no celular…";
+      const b=document.createElement("button"); b.type="button"; b.className="btn ghost"; b.textContent="Enviar agora";
+      b.addEventListener("click",()=>sincronizar()); el.appendChild(document.createTextNode(" ")); el.appendChild(b);
     } else { el.className="conn hidden"; el.textContent=""; }
     const f=falhas(), fb=$("falhas");
     if(!f.length){ fb.classList.add("hidden"); fb.innerHTML=""; return; }
@@ -245,13 +273,17 @@
     }
     delete $("s_btn").dataset.force;
     const semNet = online===false || navigator.onLine===false;
-    colocarNaFila({ acao:"saida", dados:{ id:uid(), nome, destino, finalidade:fin, saidaData:br(hoje()), saidaHora:$("s_hora").value,
+    const dS={ id:uid(), nome, destino, finalidade:fin, saidaData:br(hoje()), saidaHora:$("s_hora").value,
       saidaTs:ts(hoje(),$("s_hora").value), kmInicial:Number(km), combSaida:seg.s_comb,
-      nivelSaida: seg.s_comb==="Não completo"?$("s_nivel").value:"", obsSaida:$("s_obs").value.trim(), regTs:Date.now() } });
+      nivelSaida: seg.s_comb==="Não completo"?$("s_nivel").value:"", obsSaida:$("s_obs").value.trim(), regTs:Date.now() };
+    const zS=txtSaida(dS);
+    colocarNaFila({ acao:"saida", dados:dS });
+    abrirZap(zS);
     gravar(K_NOME,nome);
     $("s_destino").value=""; $("s_finalidade").value=""; $("s_outro").value=""; $("s_outroBox").classList.add("hidden");
     $("s_obs").value=""; $("s_km").value=""; resetSeg("s_comb"); defaultsSaida(); renderAll();
     showMsg(m,"ok", semNet ? "Saída guardada no celular. "+AVISO_ENVIO : "Saída registrada. Boa viagem! Na volta, registre a chegada na aba Chegada.");
+    botaoZap(m, zS);
   });
 
   // ---------- CHEGADA ----------
@@ -268,10 +300,14 @@
     if(cTs<r.saidaTs){ showMsg(m,"err","Data/hora da chegada é anterior à saída."); return; }
     const rod=Number(km)-Number(r.kmInicial);
     const semNet = online===false || navigator.onLine===false;
-    colocarNaFila({ acao:"chegada", id:r.id, dados:{ chegadaData:br(hoje()), chegadaHora:$("c_hora").value, chegadaTs:cTs,
-      kmFinal:Number(km), combChegada:seg.c_comb, nivelChegada: seg.c_comb==="Não completo"?$("c_nivel").value:"", obsChegada:$("c_obs").value.trim(), regTs:Date.now() } });
+    const dC={ chegadaData:br(hoje()), chegadaHora:$("c_hora").value, chegadaTs:cTs,
+      kmFinal:Number(km), combChegada:seg.c_comb, nivelChegada: seg.c_comb==="Não completo"?$("c_nivel").value:"", obsChegada:$("c_obs").value.trim(), regTs:Date.now() };
+    const zC=txtChegada(r,dC);
+    colocarNaFila({ acao:"chegada", id:r.id, dados:dC });
+    abrirZap(zC);
     $("c_km").value=""; $("c_obs").value=""; resetSeg("c_comb"); $("formChegada").classList.add("hidden"); renderAll();
     showMsg(m,"ok", semNet ? "Chegada guardada no celular ("+fmtKm(rod)+" km). "+AVISO_ENVIO : "Chegada registrada: "+fmtKm(rod)+" km rodados. Obrigado!");
+    botaoZap(m, zC);
   });
 
   // ---------- início ----------

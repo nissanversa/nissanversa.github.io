@@ -1,6 +1,6 @@
 // Guarda o app no celular para abrir sem internet
 // e, no Android, envia os registros guardados mesmo com o app fechado.
-const CACHE = 'uso-carro-v2';
+const CACHE = 'uso-carro-v3';
 const ARQUIVOS = ['./', './index.html', './app.js', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 const API = "https://script.google.com/macros/s/AKfycbzTmmkG8GP5tURbAXGbt9yafDcZkEu2s3BHfEJZAv3t9O-scNglmxffl5cfTcA5TOA5/exec";
 
