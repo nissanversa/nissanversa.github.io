@@ -529,7 +529,8 @@
   });
 
   // ---------- início ----------
-  recarregarFila().then(()=>{ renderAll(); sincronizar(); });
+  const viaQR = new URLSearchParams(location.search).has("qr");
+  recarregarFila().then(()=>{ renderAll(); if(viaQR) goTab(abertos().length ? "chegada" : "saida"); sincronizar().then(()=>{ if(viaQR) goTab(abertos().length ? "chegada" : "saida"); }); });
   document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) recarregarFila().then(sincronizar); });
   window.addEventListener("online", ()=>{ online=null; sincronizar(); });
   window.addEventListener("offline", ()=>{ online=false; renderAll(); });
